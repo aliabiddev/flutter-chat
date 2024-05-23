@@ -18,15 +18,23 @@ class SplashPageState extends State<SplashPage> {
     _redirect();
   }
 
-  Future<void> _redirect() async {
-    // await for for the widget to mount
+  Future<void> getInitialSession() async {
+    // quick and dirty way to wait for the widget to mount
     await Future.delayed(Duration.zero);
 
-    final session = supabase.auth.currentSession;
-    if (session == null) {
-      Navigator.of(context)
-          .pushAndRemoveUntil(RegisterPage.route(), (route) => false);
-    } else {
+    try {
+      final session = await SupabaseAuth.instance.initialSession;
+      if (session == null) {
+        Navigator.of(context)
+            .pushAndRemoveUntil(RegisterPage.route(), (_) => false);
+      } else {
+        Navigator.of(context)
+            .pushAndRemoveUntil(RoomsPage.route(), (_) => false);
+      }
+    } catch (_) {
+      context.showErrorSnackBar(
+        message: 'Error occured during session refresh',
+      );
       Navigator.of(context)
           .pushAndRemoveUntil(ChatPage.route(), (route) => false);
     }
