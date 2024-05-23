@@ -1,8 +1,6 @@
 # Flutter Chat Example
 
-Simple chat app to demonstrate the realtime capability of Supabase with Flutter. You can follow along on how to build this app on [this article](https://supabase.com/blog/flutter-tutorial-building-a-chat-app).
-
-You can also find an example using [row level security](https://supabase.com/docs/guides/auth/row-level-security) to provide chat rooms to enable 1 to 1 chats on the [`with-auth` branch](https://github.com/supabase-community/flutter-chat/tree/with_auth). 
+Simple chat app to demonstrate the realtime capability of Supabase with Flutter.
 
 ## SQL
 
@@ -80,8 +78,6 @@ add column room_id uuid references public.rooms(id) on delete cascade not null;
 -- *** Add tables to the publication to enable realtime ***
 
 alter publication supabase_realtime add table public.room_participants;
-alter publication supabase_realtime add table public.messages;
-
 
 -- *** Security definer functions ***
 
@@ -114,10 +110,6 @@ create policy "Participants of the room can view other participants." on public.
 alter table public.messages enable row level security;
 create policy "Users can view messages on rooms they are in." on public.messages for select using (is_room_participant(room_id));
 create policy "Users can insert messages on rooms they are in." on public.messages for insert with check (is_room_participant(room_id) and profile_id = auth.uid());
-
-
--- *** Views and functions ***
-
 
 
 -- Creates a new room with the user and another user in it.
@@ -157,21 +149,4 @@ create or replace function create_new_room(other_user_id uuid) returns uuid as $
         return new_room_id;
     end
 $$ language plpgsql security definer;
-
--- Function to create a new row in profiles table upon signup
--- Also copies the username value from metadata
-create or replace function handle_new_user() returns trigger as $$
-    begin
-        insert into public.profiles(id, username)
-        values(new.id, new.raw_user_meta_data->>'username');
-
-        return new;
-    end;
-$$ language plpgsql security definer;
-
--- Trigger to call `handle_new_user` when new user signs up
-create trigger on_auth_user_created
-    after insert on auth.users
-    for each row
-    execute function handle_new_user();
 ```
