@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_chat_app/components/user_avatar.dart';
-import 'package:my_chat_app/cubits/chat/chat_cubit.dart';
 
 import 'package:my_chat_app/models/message.dart';
 import 'package:my_chat_app/models/profile.dart';
 import 'package:my_chat_app/utils/constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart';
 
 /// Page to chat with someone.
@@ -16,30 +14,54 @@ import 'package:timeago/timeago.dart';
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
 
-  static Route<void> route(String roomId) {
+  static Route<void> route() {
     return MaterialPageRoute(
-      builder: (context) => BlocProvider<ChatCubit>(
-        create: (context) => ChatCubit()..setMessagesListener(roomId),
-        child: const ChatPage(),
-      ),
+      builder: (context) => const ChatPage(),
     );
+  }
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  late final Stream<List<Message>> _messagesStream;
+  final Map<String, Profile> _profileCache = {};
+
+  @override
+  void initState() {
+    final myUserId = supabase.auth.currentUser!.id;
+    _messagesStream = supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .order('created_at')
+        .map((maps) => maps
+            .map((map) => Message.fromMap(map: map, myUserId: myUserId))
+            .toList());
+    super.initState();
+  }
+
+  Future<void> _loadProfileCache(String profileId) async {
+    if (_profileCache[profileId] != null) {
+      return;
+    }
+    final data =
+        await supabase.from('profiles').select().eq('id', profileId).single();
+    final profile = Profile.fromMap(data);
+    setState(() {
+      _profileCache[profileId] = profile;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Chat')),
-      body: BlocConsumer<ChatCubit, ChatState>(
-        listener: (context, state) {
-          if (state is ChatError) {
-            context.showErrorSnackBar(message: state.message);
-          }
-        },
-        builder: (context, state) {
-          if (state is ChatInitial) {
-            return preloader;
-          } else if (state is ChatLoaded) {
-            final messages = state.messages;
+      body: StreamBuilder<List<Message>>(
+        stream: _messagesStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final messages = snapshot.data!;
             return Column(
               children: [
                 Expanded(
@@ -68,21 +90,9 @@ class ChatPage extends StatefulWidget {
                 const _MessageBar(),
               ],
             );
-          } else if (state is ChatEmpty) {
-            return Column(
-              children: const [
-                Expanded(
-                  child: Center(
-                    child: Text('Start your conversation now :)'),
-                  ),
-                ),
-                _MessageBar(),
-              ],
-            );
-          } else if (state is ChatError) {
-            return Center(child: Text(state.message));
+          } else {
+            return preloader;
           }
-          throw UnimplementedError();
         },
       ),
     );
@@ -105,35 +115,32 @@ class _MessageBarState extends State<_MessageBar> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: 8,
-          left: 8,
-          right: 8,
-          bottom: MediaQuery.of(context).padding.bottom,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                keyboardType: TextInputType.text,
-                maxLines: null,
-                autofocus: true,
-                controller: _textController,
-                decoration: const InputDecoration(
-                  hintText: 'Type a message',
-                  border: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.all(8),
+      color: Colors.grey[200],
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  keyboardType: TextInputType.text,
+                  maxLines: null,
+                  autofocus: true,
+                  controller: _textController,
+                  decoration: const InputDecoration(
+                    hintText: 'Type a message',
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.all(8),
+                  ),
                 ),
               ),
-            ),
-            TextButton(
-              onPressed: () => _submitMessage(),
-              child: const Text('Send'),
-            ),
-          ],
+              TextButton(
+                onPressed: () => _submitMessage(),
+                child: const Text('Send'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -157,7 +164,6 @@ class _MessageBarState extends State<_MessageBar> {
     if (text.isEmpty) {
       return;
     }
-    BlocProvider.of<ChatCubit>(context).sendMessage(text);
     _textController.clear();
     try {
       await supabase.from('messages').insert({
@@ -200,8 +206,8 @@ class _ChatBubble extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: message.isMine
-                ? Colors.grey[300]
-                : Theme.of(context).primaryColor,
+                ? Theme.of(context).primaryColor
+                : Colors.grey[300],
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(message.content),

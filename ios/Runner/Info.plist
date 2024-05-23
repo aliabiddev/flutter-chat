@@ -48,7 +48,7 @@
 		<string>Editor</string>
 		<key>CFBundleURLSchemes</key>
 		<array>
-			<string>io.supabase.chat</string>
+			<string>io.supabase.flutterquickstart</string>
 		</array>
 		</dict>
 	</array>
