@@ -61,7 +61,7 @@ class ChatCubit extends Cubit<ChatState> {
       emit(ChatError('Error submitting message.'));
       _messages.removeWhere((message) => message.id == 'new');
       emit(ChatLoaded(_messages));
-    }
+    } 
   }
 
   @override
