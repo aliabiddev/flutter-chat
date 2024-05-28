@@ -27,18 +27,6 @@ class RoomsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rooms'),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await supabase.auth.signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                RegisterPage.route(),
-                (route) => false,
-              );
-            },
-            child: const Text('Logout'),
-          ),
-        ],
       ),
       body: BlocBuilder<RoomCubit, RoomState>(
         builder: (context, state) {

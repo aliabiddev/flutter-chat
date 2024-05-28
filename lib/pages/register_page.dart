@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:my_chat_app/pages/home_page.dart';
 import 'package:my_chat_app/pages/login_page.dart';
 import 'package:my_chat_app/pages/rooms_page.dart';
 import 'package:my_chat_app/utils/constants.dart';
@@ -42,7 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final session = data.session;
       if (session != null && !haveNavigated) {
         haveNavigated = true;
-        Navigator.of(context).pushReplacement(RoomsPage.route());
+        Navigator.of(context).pushReplacement(HomePage.route());
       }
     });
   }

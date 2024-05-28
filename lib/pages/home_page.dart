@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:my_chat_app/pages/edit_profile_page.dart';
+import 'package:my_chat_app/pages/register_page.dart';
 import 'package:my_chat_app/pages/rooms_page.dart';
 import 'package:my_chat_app/pages/search_page.dart';
 import 'package:my_chat_app/pages/settings_page.dart';
+import 'package:my_chat_app/utils/constants.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -21,6 +24,18 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await supabase.auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                RegisterPage.route(),
+                (route) => false,
+              );
+            },
+            child: const Text('Logout'),
+          ),
+        ],
       ),
       body: GridView.count(
         crossAxisCount: 2,
