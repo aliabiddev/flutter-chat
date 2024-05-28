@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_chat_app/utils/constants.dart';
+import 'package:my_chat_app/pages/register_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -50,26 +52,39 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sign In')),
-      body: ListView(
-        padding: formPadding,
-        children: [
-          TextFormField(
-            controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
-            keyboardType: TextInputType.emailAddress,
+      body: Center(
+        child: FractionallySizedBox(
+          widthFactor: 0.5,
+          child: ListView(
+            padding: formPadding,
+            shrinkWrap: true,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              spacer,
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+              ),
+              spacer,
+              ElevatedButton(
+                onPressed: _isLoading ? null : _signIn,
+                child: const Text('Login'),
+              ),
+              spacer,
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(RegisterPage.route());
+                },
+                child: const Text('Create an account'),
+              ),
+            ],
           ),
-          spacer,
-          TextFormField(
-            controller: _passwordController,
-            decoration: const InputDecoration(labelText: 'Password'),
-            obscureText: true,
-          ),
-          spacer,
-          ElevatedButton(
-            onPressed: _isLoading ? null : _signIn,
-            child: const Text('Login'),
-          ),
-        ],
+        ),
       ),
     );
   }
